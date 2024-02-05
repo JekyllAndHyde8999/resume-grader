@@ -12,19 +12,23 @@ from langchain.document_loaders import PyPDFLoader, TextLoader
 
 class JobDescriptionGrader:
     def __init__(self, job_description_dir: str, resume_path: str):
+        """
+        Parameters:
+            job_description: a string containing the job description
+            resume_dir: the path to the folder containing the resumes in pdf format
+        """
+
         self.jd_dir = job_description_dir
         self.llm = ChatGooglePalm(temperature=0.1)
         self.resume_path = resume_path
 
         self.__load_jds(self.jd_dir)
 
-        summarization_prompt_template = """
-        Write a brief summary of the following content extracted from a resume. Be sure to keep important keywords such as those pertaining to their skills, projects completed, work experience, etc.
+        summarization_prompt_template = """Write a brief summary of the following content extracted from a resume. Be sure to keep important keywords such as those pertaining to their skills, projects completed, work experience, etc.
+{text}
 
-        {text}
-
-        SUMMARY:
-        """
+SUMMARY:
+"""
 
         prompt = PromptTemplate(
             template=summarization_prompt_template, input_variables=["text"]
@@ -34,12 +38,26 @@ class JobDescriptionGrader:
         )
 
     def __load_jds(self, jd_dir):
+        """
+        Uses langchain's PyPDFLoader to load each of the resumes into a dictionary with the filename as the key
+        
+        Parameters:
+            resume_dir: the path to the folder containing the resumes in pdf format
+        """
         self.jds = dict(
             (file, TextLoader(file_path=os.path.join(jd_dir, file)).load())
             for file in os.listdir(os.path.join(os.path.abspath(jd_dir)))
         )
 
     def grade(self):
+        """
+        Vectorize the summaries of the resume and job descriptions
+        Calculate the cosine similarity between the resume and each of the job descriptions and store the results in a dictionary
+        
+        Returns:
+            similarities: a dictionary mapping between the job description and its corresponding similarity to the given resume
+        """
+
         self.resume_summary = self.__summarize(
             PyPDFLoader(os.path.abspath(self.resume_path)).load()
         )

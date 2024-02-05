@@ -12,18 +12,22 @@ from langchain.document_loaders import PyPDFLoader
 
 class ResumeGrader:
     def __init__(self, job_description: str, resume_dir: str):
+        """
+        Parameters:
+            job_description: a string containing the job description
+            resume_dir: the path to the folder containing the resumes in pdf format
+        """
+        
         self.jd = job_description
         self.llm = ChatGooglePalm(temperature=0.1)
 
         self.__load_resumes(resume_dir)
 
-        summarization_prompt_template = """
-        Write a brief summary of the following content extracted from a resume. Be sure to keep important keywords such as those pertaining to their skills, projects completed, work experience, etc.
+        summarization_prompt_template = """Write a brief summary of the following content. Retain important keywords such as those pertaining to skills, projects completed, work experience, etc.
+{text}
 
-        {text}
-
-        SUMMARY:
-        """
+SUMMARY:
+"""
 
         prompt = PromptTemplate(
             template=summarization_prompt_template, input_variables=["text"]
@@ -32,13 +36,27 @@ class ResumeGrader:
             llm=self.llm, chain_type="stuff", prompt=prompt
         )
 
-    def __load_resumes(self, resume_dir):
+    def __load_resumes(self, resume_dir: str):
+        """
+        Uses langchain's PyPDFLoader to load each of the resumes into a dictionary with the filename as the key
+        
+        Parameters:
+            resume_dir: the path to the folder containing the resumes in pdf format
+        """
         self.resumes = dict(
             (file, PyPDFLoader(file_path=os.path.join(resume_dir, file)).load())
             for file in os.listdir(os.path.join(os.path.abspath(resume_dir)))
         )
 
-    def grade(self):
+    def grade(self) -> Dict[str, float]:
+        """
+        Vectorize the summaries of the resumes and job description
+        Calculate the cosine similarity (normalized between 0 and 1) between the job description and each of the resumes and store the results in a dictionary
+        
+        Returns:
+            similarities: a dictionary mapping between the file name and its corresponding similarity to the given job description
+        """
+        
         self.jd_summary = self.__summarize([Document(page_content=self.jd)])
         self.resume_summaries = {
             key: preprocess(self.__summarize(value))
