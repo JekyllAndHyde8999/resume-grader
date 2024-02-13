@@ -11,15 +11,19 @@ from langchain.document_loaders import PyPDFLoader
 
 
 class ResumeGrader:
-    def __init__(self, job_description: str, resume_dir: str):
+    def __init__(self, job_description: str, resume_dir: str, llmconfig: Optional[Dict[str, Any]]=None):
         """
         Parameters:
             job_description: a string containing the job description
             resume_dir: the path to the folder containing the resumes in pdf format
+            llmconfig: a dictionary containing configuration parameters for the llm
         """
         
         self.jd = job_description
-        self.llm = ChatGooglePalm(temperature=0.1)
+        if llmconfig:
+            self.llm = ChatGooglePalm(**llmconfig)
+        else:
+            self.llm = ChatGooglePalm(temperature=0.1)
 
         self.__load_resumes(resume_dir)
 

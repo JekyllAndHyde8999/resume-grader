@@ -11,18 +11,21 @@ from langchain.document_loaders import PyPDFLoader, TextLoader
 
 
 class JobDescriptionGrader:
-    def __init__(self, job_description_dir: str, resume_path: str):
+    def __init__(self, job_description_dir: str, resume_path: str, llmconfig: Optional[Dict[str, Any]]=None):
         """
         Parameters:
             job_description: a string containing the job description
             resume_dir: the path to the folder containing the resumes in pdf format
+            llmconfig: a dictionary containing configuration parameters for the llm
         """
 
-        self.jd_dir = job_description_dir
-        self.llm = ChatGooglePalm(temperature=0.1)
         self.resume_path = resume_path
+        if llmconfig:
+            self.llm = ChatGooglePalm(**llmconfig)
+        else:
+            self.llm = ChatGooglePalm(temperature=0.1)
 
-        self.__load_jds(self.jd_dir)
+        self.__load_jds(job_description_dir)
 
         summarization_prompt_template = """Write a brief summary of the following content extracted from a resume. Be sure to keep important keywords such as those pertaining to their skills, projects completed, work experience, etc.
 {text}
