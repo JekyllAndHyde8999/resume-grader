@@ -1,13 +1,16 @@
 import os
+
 from typing import *
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 from langchain.prompts import PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
-from .nlp_utils import preprocess
-from sklearn.feature_extraction.text import TfidfVectorizer
-from langchain_community.utils.math import cosine_similarity
 from langchain.schema import Document
-from langchain.chat_models import ChatGooglePalm
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.utils.math import cosine_similarity
+from langchain_community.chat_models import ChatGooglePalm
+from langchain_community.document_loaders import PyPDFLoader
+
+from .nlp_utils import preprocess
 
 
 class ResumeGrader:
