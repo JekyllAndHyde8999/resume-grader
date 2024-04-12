@@ -1,7 +1,8 @@
-import datetime
+from datetime import date, datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from dateutil import parser as date_parser
+from langchain.pydantic_v1 import BaseModel, Field, validator
 
 
 class ContactInfo(BaseModel):
@@ -14,16 +15,38 @@ class ContactInfo(BaseModel):
 
 
 class Experience(BaseModel):
-    title: str = Field(description="title of the position held")
-    company: str = Field(description="name of the workplace the position was held")
-    description: str = Field(description="brief description of the position held")
-    start_date: datetime.date = Field(description="start date of the work experience")
-    end_date: Optional[datetime.date | Literal["Present", "present"]] = Field(
+    title: Optional[str] = Field(description="title of the position held")
+    company: Optional[str] = Field(
+        description="name of the workplace the position was held"
+    )
+    description: Optional[str] = Field(
+        description="brief description of the position held"
+    )
+    start_date: Optional[str | date] = Field(
+        description="start date of the work experience"
+    )
+    end_date: Optional[str | date | Literal["Present", "present"]] = Field(
         description="end date of the work experience"
     )
-    miscellaneous: Any = Field(
+    miscellaneous: Optional[Any] = Field(
         description="other miscellaneous information that does not fit into other fields"
     )
+
+    @validator("end_date")
+    def validate_enddate(cls, field):
+        if isinstance(field, date):
+            return field
+        elif isinstance(field, str) and field.lower() == "present":
+            return datetime.today()
+        else:
+            return date_parser.parse(field)
+
+    @validator("start_date")
+    def validate_startdate(cls, field):
+        if isinstance(field, date):
+            return field
+        else:
+            return date_parser.parse(field)
 
 
 class CandidateProfile(BaseModel):
@@ -45,12 +68,15 @@ class CandidateProfile(BaseModel):
     experiences: Optional[list[Experience]] = Field(
         description="list of places and other jobs the candidates had in the past"
     )
-    years_of_experience: Optional[float] = Field(
-        description="total number of years of experience the candidate possess; extracted from work experience in resume"
-    )
-    miscellaneous: Any = Field(
+    miscellaneous: Optional[Any] = Field(
         description="other miscellaneous information that does not fit into other fields"
     )
+
+    @validator("degree")
+    def validate_degree(cls, field):
+        for degree in ["Bachelor", "Master", "PhD"]:
+            if degree.lower() in field.lower():
+                return degree
 
 
 class JobRole(BaseModel):
@@ -67,6 +93,12 @@ class JobRole(BaseModel):
     experience: float = Field(
         description="the minimum number of years of experience required for the position"
     )
-    miscellaneous: Any = Field(
+    miscellaneous: Optional[Any] = Field(
         description="other miscellaneous information that does not fit into other fields"
     )
+
+    @validator("qualification_degree")
+    def validate_degree(cls, field):
+        for degree in ["Bachelor", "Master", "PhD"]:
+            if degree.lower() in field.lower():
+                return degree

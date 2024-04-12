@@ -4,7 +4,7 @@ from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 
-from .models import CandidateProfile, JobRole
+from .models import CandidateProfile, Experience, JobRole
 
 
 def summarize_resume(resume: list[Document], llm):
@@ -28,7 +28,7 @@ The summary should include the following information:
         template=template,
         input_variables=["document"],
         partial_variables={
-            "format_instructions": pydantic_parser.get_format_instructions()
+            "format_instructions": outputfixing_parser.get_format_instructions()
         },
     )
 
@@ -56,7 +56,7 @@ Do not give me general skills such as "machine learning frameworks" or "developm
         template=template,
         input_variables=["document"],
         partial_variables={
-            "format_instructions": pydantic_parser.get_format_instructions()
+            "format_instructions": outputfixing_parser.get_format_instructions()
         },
     )
 
@@ -78,8 +78,11 @@ def skill_summary(cskills: list[str], jdskills: list[str]):
     }
 
 
-def experience_summary(c_years: float, jd_years: float):
-    return {"profile": float(c_years), "role": float(jd_years)}
+def experience_summary(profile_experiences: list[Experience], jd_years: float):
+    num_profile_years = 0
+    for experience in profile_experiences:
+        num_profile_years += (experience.end_date - experience.start_date).days / 365
+    return {"resume": round(num_profile_years, 1), "job_description": float(jd_years)}
 
 
 def education_summary(c_edu: str, jd_edu: str):
@@ -95,8 +98,8 @@ def education_summary(c_edu: str, jd_edu: str):
     )
 
     return {
-        "profile": c_edu,
-        "role": jd_edu,
+        "resume": c_edu,
+        "job_description": jd_edu,
         "satisfied": c_edu_found >= jd_edu_found,
     }
 
@@ -113,6 +116,6 @@ def generate_summary(profile: CandidateProfile, role: JobRole):
 
     return {
         "skill": skill_summary(profile.skills, role.skills_required),
-        "experience": experience_summary(profile.years_of_experience, role.experience),
+        "experience": experience_summary(profile.experiences, role.experience),
         "education": education_summary(profile.degree, role.qualification_degree),
     }

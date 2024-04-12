@@ -1,10 +1,10 @@
 import os
 from typing import *
 
-from langchain.schema import Document
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.document_loaders import PyPDFLoader
+from langchain.schema import Document
 
+from .llms import load_llm
 from .utils import generate_summary, summarize_jd, summarize_resume
 
 
@@ -13,7 +13,7 @@ class ResumeGrader:
         self,
         job_description: str,
         resume_dir: str,
-        llmconfig: Optional[Dict[str, Any]] = None,
+        llmconfig: Dict[str, Any],
     ):
         """
         Parameters:
@@ -23,12 +23,8 @@ class ResumeGrader:
         """
 
         self.jd = job_description
-        if llmconfig:
-            self.llm = ChatOpenAI(**llmconfig)
-        else:
-            self.llm = ChatOpenAI(temperature=0)
-
         self.__load_resumes(resume_dir)
+        self.llm = load_llm(llmconfig)
 
     def __load_resumes(self, resume_dir: str):
         """
